@@ -5,28 +5,29 @@ This Terraform script (`main.tf`) automates the creation of an S3 bucket and set
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) installed on your local machine.
+- [tflocal](https://github.com/localstack/terraform-local) installed on your local machine.
 - [LocalStack](https://github.com/localstack/localstack) installed on your local machine.
 
 ## Usage
 
-1. **Initialize Terraform**: Run `terraform init` to initialize the working directory containing Terraform configuration files.
+1. **Initialize Terraform**: Run `tflocal init` to initialize the working directory containing Terraform configuration files.
    ```bash
-   terraform init
+   tflocal init
    ```
 
-2. **Plan Infrastructure Changes**: Run `terraform plan` to create an execution plan. This step is optional but recommended to review changes before applying them.
+2. **Plan Infrastructure Changes**: Run `tflocal plan` to create an execution plan. This step is optional but recommended to review changes before applying them.
    ```bash
-   terraform plan
+   tflocal plan
    ```
 
 3. **Apply Changes**: Apply the Terraform configuration to create the S3 bucket and execute the local script.
    ```bash
-   terraform apply
+   tflocal apply
    ```
 
 4. **Verify S3 Bucket Creation**: Once the script execution is complete, verify that the S3 bucket has been created with the specified configurations.
 
 5. **Cleanup (Optional)**: If needed, you can destroy the infrastructure created by Terraform after testing.
    ```bash
-   terraform destroy
+   tflocal destroy
    ```
