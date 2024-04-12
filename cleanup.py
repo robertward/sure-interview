@@ -2,18 +2,15 @@ import argparse
 import boto3
 
 def initialize_s3_client():
-    ## Remove when not using localstack
-    # Specify LocalStack endpoint URL
-    localstack_endpoint_url = 'http://localhost:4566'
-
-    # Create an S3 client with LocalStack configuration
-    s3 = boto3.client('s3', endpoint_url=localstack_endpoint_url,
-                             aws_access_key_id='dummy', aws_secret_access_key='dummy')
-    ##
+    ### Use this for localstack
+    ## Specify LocalStack endpoint URL
+    #localstack_endpoint_url = 'http://localhost:4566'
+    ## Create an S3 client with LocalStack configuration
+    #s3 = boto3.client('s3', endpoint_url=localstack_endpoint_url, aws_access_key_id='dummy', aws_secret_access_key='dummy')
     
     ## Use this for AWS
-    # Create an S3 client
-    # s3 = boto3.client('s3')
+    #Create an S3 client
+    s3 = boto3.client('s3')
 
     return s3
 
@@ -45,7 +42,7 @@ def list_parent_objects_with_date_modified(bucket_name):
                 # If there are no objects inside the prefix, store "N/A" for the last modified date
                 parent_objects_with_last_modified.append((parent_object_key, "N/A (No objects inside)"))
     else:
-        print("No parent objects found in the bucket.")
+        print("No deployments found in the bucket.")
     
     return parent_objects_with_last_modified
 
@@ -57,15 +54,15 @@ def sort_parent_objects(parent_objects):
     return parent_objects
 
 
-def print_parent_objects(sorted_parent_objects, num_prefixes):
+def print_parent_objects(sorted_parent_objects, num_deployments):
 
     # Check if the number of parent objects is greater than the specified number of prefixes
-    if len(sorted_parent_objects) > num_prefixes:
-        # Print only the parent objects starting from the index specified by num_prefixes
-        for parent_object_key, last_modified in sorted_parent_objects[num_prefixes:]:
-            print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified}")
+    if len(sorted_parent_objects) > num_deployments:
+        # Print only the parent objects starting from the index specified by num_deployments
+        for parent_object_key, last_modified in sorted_parent_objects[num_deployments:]:
+            print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified} will be DELETED")
     else:
-        print("The number of parent objects is less than or equal to the specified number of prefixes.")
+        print("The number of deployments in the bucket is less than or equal to the specified number to keep.")
 
 
 def delete_objects_under_prefix(bucket_name, prefix):
@@ -79,21 +76,23 @@ def delete_objects_under_prefix(bucket_name, prefix):
         print(f"No objects found under prefix: {prefix}")
 
 
-# The name of your S3 bucket
-bucket_name = 'deployments'
-
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="List the parent objects in an S3 bucket with their last modified dates.")
     parser.add_argument("bucket_name", help="Name of the S3 bucket")
-    parser.add_argument("-n", "--num_prefixes", type=int, default=5, help="Number of prefixes to display (default: 5)")
+    parser.add_argument("-n", "--num_deployments", type=int, default=5, help="Number of deployments to keep (default: 5)")
+    parser.add_argument("-d", "--dry-run", action='store_true', help="Dry run - Nothing will be deleted")
     args = parser.parse_args()
 
     # Call the function with the provided arguments
     parent_objects = list_parent_objects_with_date_modified(args.bucket_name)
     sorted_parent_objects = sort_parent_objects(parent_objects)
-    print_parent_objects(sorted_parent_objects, num_prefixes=args.num_prefixes)
+    print_parent_objects(sorted_parent_objects, num_deployments=args.num_deployments)
 
-    # Delete objects under each parent object
-    for parent_object_key, _ in sorted_parent_objects[args.num_prefixes:]:
-        delete_objects_under_prefix(args.bucket_name, parent_object_key)
+    # Check if dry-run flag is set
+    if not args.dry_run:
+        # Delete objects under each parent object
+        for parent_object_key, _ in sorted_parent_objects[args.num_deployments:]:
+            delete_objects_under_prefix(args.bucket_name, parent_object_key)
+    else:
+        print("---- DRY RUN ----")
