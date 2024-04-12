@@ -1,6 +1,6 @@
 import boto3
 
-def list_objects(bucket_name):
+def list_parent_objects_with_date_modified(bucket_name):
     ## Remove when not using localstack
     # Specify LocalStack endpoint URL
     localstack_endpoint_url = 'http://localhost:4566'
@@ -15,18 +15,27 @@ def list_objects(bucket_name):
     # s3_client = boto3.client('s3')
 
     # List objects in the bucket
-    response = s3.list_objects_v2(Bucket=bucket_name)
+    response = s3.list_objects_v2(Bucket=bucket_name, Delimiter='/')
 
     # Check if there are any objects in the bucket
-    if 'Contents' in response:
-        # Print the key (object name) for each object in the bucket
-        for obj in response['Contents']:
-            print(obj['Key'])
+    if 'CommonPrefixes' in response:
+        # Print the key and date modified for each parent object (CommonPrefixes)
+        for obj in response['CommonPrefixes']:
+            parent_object_key = obj['Prefix']
+            # Because there is no LastModified key for prefixes we need to grab the objects in each prefix
+            parent_object_response = s3.list_objects_v2(Bucket=bucket_name, Prefix=parent_object_key)
+            # Compare LastModified dates on all the objects to find the max LastModified and use that for the prefix
+            last_modified_dates = [content['LastModified'] for content in parent_object_response.get('Contents', [])]
+            if last_modified_dates:
+                parent_last_modified = max(last_modified_dates)
+                print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {parent_last_modified}")
+            else:
+                print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: N/A (No objects inside)")
     else:
-        print("No objects found in the bucket.")
+        print("No parent objects found in the bucket.")
 
 # The name of your S3 bucket
 bucket_name = 'deployments'
 
 # Call the function with the bucket name
-list_objects(bucket_name)
+list_parent_objects_with_date_modified(bucket_name)
