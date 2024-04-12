@@ -1,6 +1,7 @@
+import argparse
 import boto3
 
-def list_parent_objects_with_date_modified(bucket_name, num_prefixes=2):
+def list_parent_objects_with_date_modified(bucket_name, num_prefixes):
     ## Remove when not using localstack
     # Specify LocalStack endpoint URL
     localstack_endpoint_url = 'http://localhost:4566'
@@ -50,5 +51,12 @@ def list_parent_objects_with_date_modified(bucket_name, num_prefixes=2):
 # The name of your S3 bucket
 bucket_name = 'deployments'
 
-# Call the function with the bucket name
-list_parent_objects_with_date_modified(bucket_name)
+if __name__ == "__main__":
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="List the parent objects in an S3 bucket with their last modified dates.")
+    parser.add_argument("bucket_name", help="Name of the S3 bucket")
+    parser.add_argument("-n", "--num_prefixes", type=int, default=5, help="Number of prefixes to display (default: 5)")
+    args = parser.parse_args()
+
+    # Call the function with the provided arguments
+    list_parent_objects_with_date_modified(args.bucket_name, num_prefixes=args.num_prefixes)
