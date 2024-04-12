@@ -44,6 +44,7 @@ optional arguments:
 2. This script assumes the bucket you are working against is in the same AWS account as the credentials and you have the required access
 3. It's assumed that sorting by date is the best way to find the latest deployment
 4. Deployment folders aren't reused
+5. Object lock isn't turned on for the S3 bucket
 
 
 ## Testing
