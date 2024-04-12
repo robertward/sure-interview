@@ -1,7 +1,7 @@
 import argparse
 import boto3
 
-def list_parent_objects_with_date_modified(bucket_name, num_prefixes):
+def list_parent_objects_with_date_modified(bucket_name):
     ## Remove when not using localstack
     # Specify LocalStack endpoint URL
     localstack_endpoint_url = 'http://localhost:4566'
@@ -39,14 +39,29 @@ def list_parent_objects_with_date_modified(bucket_name, num_prefixes):
             else:
                 # If there are no objects inside the prefix, store "N/A" for the last modified date
                 parent_objects_with_last_modified.append((parent_object_key, "N/A (No objects inside)"))
-
-        # Sort the list of parent objects by last modified date.  Set reverse to True for newest first
-        parent_objects_with_last_modified.sort(key=lambda x: x[1], reverse=False)
-        for parent_object_key, last_modified in parent_objects_with_last_modified[:num_prefixes]:
-            print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified}")
-    
     else:
         print("No parent objects found in the bucket.")
+    
+    return parent_objects_with_last_modified
+
+def sort_parent_objects(parent_objects):
+
+    # Sort the list of parent objects by last modified date.  Set reverse to True for newest first
+    parent_objects.sort(key=lambda x: x[1], reverse=False)
+
+    return parent_objects
+
+
+def print_parent_objects(sorted_parent_objects, num_prefixes):
+
+    # Check if the number of parent objects is greater than the specified number of prefixes
+    if len(sorted_parent_objects) > num_prefixes:
+        # Print only the parent objects starting from the index specified by num_prefixes
+        for parent_object_key, last_modified in sorted_parent_objects[num_prefixes:]:
+            print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified}")
+    else:
+        print("The number of parent objects is less than or equal to the specified number of prefixes.")
+
 
 # The name of your S3 bucket
 bucket_name = 'deployments'
@@ -59,4 +74,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Call the function with the provided arguments
-    list_parent_objects_with_date_modified(args.bucket_name, num_prefixes=args.num_prefixes)
+    parent_objects = list_parent_objects_with_date_modified(args.bucket_name)
+    sorted_parent_objects = sort_parent_objects(parent_objects)
+    print_parent_objects(sorted_parent_objects, num_prefixes=args.num_prefixes)
