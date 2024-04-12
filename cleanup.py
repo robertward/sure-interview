@@ -1,6 +1,6 @@
 import boto3
 
-def list_parent_objects_with_date_modified(bucket_name):
+def list_parent_objects_with_date_modified(bucket_name, num_prefixes=2):
     ## Remove when not using localstack
     # Specify LocalStack endpoint URL
     localstack_endpoint_url = 'http://localhost:4566'
@@ -41,7 +41,7 @@ def list_parent_objects_with_date_modified(bucket_name):
 
         # Sort the list of parent objects by last modified date.  Set reverse to True for newest first
         parent_objects_with_last_modified.sort(key=lambda x: x[1], reverse=False)
-        for parent_object_key, last_modified in parent_objects_with_last_modified:
+        for parent_object_key, last_modified in parent_objects_with_last_modified[:num_prefixes]:
             print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified}")
     
     else:
