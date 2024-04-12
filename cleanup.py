@@ -1,7 +1,7 @@
 import argparse
 import boto3
 
-def list_parent_objects_with_date_modified(bucket_name):
+def initialize_s3_client():
     ## Remove when not using localstack
     # Specify LocalStack endpoint URL
     localstack_endpoint_url = 'http://localhost:4566'
@@ -10,10 +10,15 @@ def list_parent_objects_with_date_modified(bucket_name):
     s3 = boto3.client('s3', endpoint_url=localstack_endpoint_url,
                              aws_access_key_id='dummy', aws_secret_access_key='dummy')
     ##
-
+    
     ## Use this for AWS
     # Create an S3 client
-    # s3_client = boto3.client('s3')
+    # s3 = boto3.client('s3')
+
+    return s3
+
+def list_parent_objects_with_date_modified(bucket_name):
+    s3 = initialize_s3_client()
 
     # List objects in the bucket
     response = s3.list_objects_v2(Bucket=bucket_name, Delimiter='/')
@@ -46,8 +51,8 @@ def list_parent_objects_with_date_modified(bucket_name):
 
 def sort_parent_objects(parent_objects):
 
-    # Sort the list of parent objects by last modified date.  Set reverse to True for newest first
-    parent_objects.sort(key=lambda x: x[1], reverse=False)
+    # Sort the list of parent objects by last modified date.  Set reverse to False for oldest first
+    parent_objects.sort(key=lambda x: x[1], reverse=True)
 
     return parent_objects
 
@@ -61,6 +66,17 @@ def print_parent_objects(sorted_parent_objects, num_prefixes):
             print(f"Parent Object: {parent_object_key.rstrip('/')}, Last Modified: {last_modified}")
     else:
         print("The number of parent objects is less than or equal to the specified number of prefixes.")
+
+
+def delete_objects_under_prefix(bucket_name, prefix):
+    s3 = initialize_s3_client()
+
+    response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    if 'Contents' in response:
+        for obj in response['Contents']:
+            s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
+    else:
+        print(f"No objects found under prefix: {prefix}")
 
 
 # The name of your S3 bucket
@@ -77,3 +93,7 @@ if __name__ == "__main__":
     parent_objects = list_parent_objects_with_date_modified(args.bucket_name)
     sorted_parent_objects = sort_parent_objects(parent_objects)
     print_parent_objects(sorted_parent_objects, num_prefixes=args.num_prefixes)
+
+    # Delete objects under each parent object
+    for parent_object_key, _ in sorted_parent_objects[args.num_prefixes:]:
+        delete_objects_under_prefix(args.bucket_name, parent_object_key)
